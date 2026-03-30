@@ -1,4 +1,4 @@
-import { constants as fsConstants } from "node:fs";
+import { constants as fsConstants, realpathSync } from "node:fs";
 import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, extname, join } from "node:path";
@@ -38,11 +38,26 @@ async function resolvePickerBinary(): Promise<string | undefined> {
     return envPath;
   }
 
-  const argv0Dir = dirname(Bun.argv[0] ?? process.cwd());
+  let execDir = dirname(process.execPath);
+  let argv0Dir = dirname(Bun.argv[0] ?? process.cwd());
   const argv1Dir = dirname(Bun.argv[1] ?? process.cwd());
+
+  try {
+    execDir = dirname(realpathSync(process.execPath));
+  } catch {
+    execDir = dirname(process.execPath);
+  }
+
+  try {
+    argv0Dir = dirname(realpathSync(Bun.argv[0] ?? process.cwd()));
+  } catch {
+    argv0Dir = dirname(Bun.argv[0] ?? process.cwd());
+  }
 
   const candidates = [
     join(process.cwd(), "dist", "fconvert-picker"),
+    join(execDir, "fconvert-picker"),
+    join(execDir, "dist", "fconvert-picker"),
     join(argv0Dir, "fconvert-picker"),
     join(argv0Dir, "dist", "fconvert-picker"),
     join(argv1Dir, "..", "dist", "fconvert-picker"),
@@ -84,7 +99,7 @@ export async function pickOutputFormatInteractive(
   const pickerBinary = await resolvePickerBinary();
   if (!pickerBinary) {
     throw new CliError(
-      "Output picker binary not found. Build it with 'bun run build:picker' or pass --to.",
+      "Output picker binary not found. Reinstall fconvert or pass --to for non-interactive selection.",
       ExitCode.EnvironmentError,
     );
   }
