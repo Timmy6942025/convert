@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "platforms": {
+    "linux-x64": {
+      "bins": {
+        "ffmpeg": "bin/ffmpeg",
+        "pandoc": "bin/pandoc",
+        "magick": "bin/magick",
+        "7zz": "bin/7zz"
+      },
+      "wasm": [],
+      "libs": []
+    }
+  }
+}

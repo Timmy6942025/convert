@@ -1,0 +1,22 @@
+{
+  "name": "convert-cli",
+  "module": "src/cli/main.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "bun run src/cli/main.ts",
+    "convert": "bun run src/cli/main.ts",
+    "test": "bun test",
+    "typecheck": "bunx tsc --noEmit",
+    "build": "bun build src/cli/main.ts --compile --outfile dist/convert"
+  },
+  "bin": {
+    "convert": "dist/convert"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
