@@ -1,5 +1,5 @@
 {
-  "name": "convert-cli",
+  "name": "convert",
   "module": "src/cli/main.ts",
   "type": "module",
   "private": true,

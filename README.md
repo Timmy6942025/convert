@@ -1,4 +1,4 @@
-# convert-cli
+# convert
 
 Fast local CLI conversion tool with graph-based anything-to-anything routing.
 
@@ -6,17 +6,17 @@ Fast local CLI conversion tool with graph-based anything-to-anything routing.
 
 ```bash
 bun install
-bun run start formats
+bun run convert formats
 ```
 
 ## Commands
 
 ```bash
-bun run start <input> <output>
-bun run start route <input> --to <format>
-bun run start formats
-bun run start handlers
-bun run start doctor
+bun run convert <input> <output>
+bun run convert route <input> --to <format>
+bun run convert formats
+bun run convert handlers
+bun run convert doctor
 ```
 
 ## Useful flags
