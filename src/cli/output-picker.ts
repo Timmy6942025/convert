@@ -4,7 +4,6 @@ import { tmpdir } from "node:os";
 import { basename, dirname, extname, join } from "node:path";
 import { CliError, ExitCode } from "../core/errors.ts";
 import type { FileFormat } from "../core/types.ts";
-import { FormatRegistry } from "../formats/registry.ts";
 
 interface PickerPayload {
   prompt: string;
@@ -87,13 +86,20 @@ export function buildDefaultOutputPath(inputPath: string, outputFormat: FileForm
 }
 
 export async function pickOutputFormatInteractive(
-  registry: FormatRegistry,
+  formats: FileFormat[],
   inputPath: string,
 ): Promise<FileFormat> {
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
     throw new CliError(
       "No output format provided and terminal is not interactive. Pass <output> or --to.",
       ExitCode.InvalidArgs,
+    );
+  }
+
+  if (formats.length === 0) {
+    throw new CliError(
+      "No reachable output formats detected for this input with current handlers.",
+      ExitCode.UnsupportedRoute,
     );
   }
 
@@ -113,7 +119,7 @@ export async function pickOutputFormatInteractive(
     prompt: "output format",
     query: "",
     preferred: extname(inputPath).replace(/^\./, ""),
-    options: registry.all().map((format) => ({
+    options: formats.map((format) => ({
       id: format.id,
       name: format.name,
       extension: format.extension,
@@ -141,7 +147,7 @@ export async function pickOutputFormatInteractive(
     }
 
     const chosenId = (await readFile(resultPath, "utf8")).trim();
-    const format = registry.getById(chosenId);
+    const format = formats.find((item) => item.id === chosenId);
     if (!format) {
       throw new CliError(`Picker returned unknown format: ${chosenId}`, ExitCode.InternalError);
     }

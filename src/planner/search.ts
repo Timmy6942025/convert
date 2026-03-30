@@ -75,3 +75,45 @@ export function findRoutes(
 
   return routes.sort((a, b) => a.totalCost - b.totalCost);
 }
+
+interface ReachableState {
+  node: string;
+  steps: number;
+}
+
+export function findReachableFormats(
+  graph: ConversionGraph,
+  fromId: string,
+  maxSteps: number,
+): Set<string> {
+  const reached = new Set<string>();
+  const bestSteps = new Map<string, number>();
+  const queue: ReachableState[] = [{ node: fromId, steps: 0 }];
+
+  bestSteps.set(fromId, 0);
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (!current) {
+      break;
+    }
+
+    if (current.steps >= maxSteps) {
+      continue;
+    }
+
+    for (const edge of graph.outgoing(current.node)) {
+      const nextSteps = current.steps + 1;
+      const known = bestSteps.get(edge.to.id);
+      if (typeof known === "number" && known <= nextSteps) {
+        continue;
+      }
+
+      bestSteps.set(edge.to.id, nextSteps);
+      reached.add(edge.to.id);
+      queue.push({ node: edge.to.id, steps: nextSteps });
+    }
+  }
+
+  return reached;
+}
