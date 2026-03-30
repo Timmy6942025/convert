@@ -12,12 +12,15 @@ bun run convert formats
 ## Commands
 
 ```bash
-bun run convert <input> <output>
+bun run convert <input> [output]
 bun run convert route <input> --to <format>
 bun run convert formats
 bun run convert handlers
 bun run convert doctor
 ```
+
+If you omit output and `--to`, an interactive Bubble Tea fuzzy picker appears so you can select the output format.
+The output file defaults to the input basename with the selected extension.
 
 ## Useful flags
 
@@ -42,6 +45,7 @@ bun run build
 ```
 
 Compiled binary is written to `dist/convert`.
+The Bubble Tea picker helper is written to `dist/fconvert-picker`.
 
 ## Project structure
 

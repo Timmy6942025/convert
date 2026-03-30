@@ -1,6 +1,6 @@
 {
   "name": "fconvert",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Fast local CLI conversion tool with graph-based anything-to-anything routing",
   "type": "module",
   "main": "src/cli/main.ts",
@@ -9,9 +9,12 @@
     "convert": "bun run src/cli/main.ts",
     "test": "bun test",
     "typecheck": "bunx tsc --noEmit",
-    "build": "bun build src/cli/main.ts --compile --outfile dist/convert"
+    "build:cli": "bun build src/cli/main.ts --compile --outfile dist/convert",
+    "build:picker": "go build -C tools/format-picker -o ../../dist/fconvert-picker .",
+    "build": "bun run build:cli && bun run build:picker"
   },
   "bin": {
+    "fconvert": "dist/convert",
     "convert": "dist/convert"
   },
   "devDependencies": {
@@ -20,6 +23,12 @@
   "peerDependencies": {
     "typescript": "^5"
   },
-  "keywords": ["convert", "converter", "ffmpeg", "pandoc", "cli"],
+  "keywords": [
+    "convert",
+    "converter",
+    "ffmpeg",
+    "pandoc",
+    "cli"
+  ],
   "license": "MIT"
 }

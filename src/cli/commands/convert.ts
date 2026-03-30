@@ -4,7 +4,8 @@ import { BundleResolver } from "../../bundle/resolve.ts";
 import { buildPlanOptions } from "../../core/config.ts";
 import { CliError, ExitCode } from "../../core/errors.ts";
 import { ConsoleLogger } from "../../core/logger.ts";
-import type { ConvertSummary } from "../../core/types.ts";
+import type { ConvertSummary, FileFormat } from "../../core/types.ts";
+import { buildDefaultOutputPath, pickOutputFormatInteractive } from "../output-picker.ts";
 import { ConversionEngine } from "../../executor/executor.ts";
 import { detectInputFormat, resolveOutputFormat } from "../../formats/detect.ts";
 import { FormatRegistry } from "../../formats/registry.ts";
@@ -42,23 +43,29 @@ export async function runConvertCommand(input: {
 
   const inputPath = input.positionals[0];
   const positionalOutput = input.positionals[1];
-  const outputPath = input.options.output ?? positionalOutput;
+  const explicitOutputPath = input.options.output ?? positionalOutput;
 
   if (!inputPath) {
-    throw new CliError("Usage: convert <input> <output> [--from fmt] [--to fmt]", ExitCode.InvalidArgs);
-  }
-
-  if (!outputPath) {
-    throw new CliError("Missing output path. Provide <output> or --output", ExitCode.InvalidArgs);
-  }
-
-  if ((await outputExists(outputPath)) && !input.options.force) {
-    throw new CliError(`Output exists: ${outputPath}. Use --force to overwrite.`, ExitCode.InvalidArgs);
+    throw new CliError(
+      "Usage: convert <input> [output] [--from fmt] [--to fmt]",
+      ExitCode.InvalidArgs,
+    );
   }
 
   const formats = new FormatRegistry();
   const inputFormat = detectInputFormat(inputPath, input.options.from, formats);
-  const outputFormat = resolveOutputFormat(outputPath, input.options.to, formats);
+  let outputFormat: FileFormat;
+  if (explicitOutputPath || input.options.to) {
+    outputFormat = resolveOutputFormat(explicitOutputPath, input.options.to, formats);
+  } else {
+    outputFormat = await pickOutputFormatInteractive(formats, inputPath);
+  }
+
+  const outputPath = explicitOutputPath ?? buildDefaultOutputPath(inputPath, outputFormat);
+
+  if ((await outputExists(outputPath)) && !input.options.force) {
+    throw new CliError(`Output exists: ${outputPath}. Use --force to overwrite.`, ExitCode.InvalidArgs);
+  }
 
   const bundle = new BundleResolver();
   const handlers = new HandlerRegistry();

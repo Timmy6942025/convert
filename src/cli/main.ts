@@ -9,11 +9,11 @@ import { CliError, ExitCode } from "../core/errors.ts";
 import { parseArgs } from "./parse.ts";
 
 function printUsage(): void {
-  console.log("convert <input> <output> [--from fmt] [--to fmt]");
-  console.log("convert route <input> --to <format>");
-  console.log("convert formats");
-  console.log("convert handlers");
-  console.log("convert doctor");
+  console.log("fconvert <input> [output] [--from fmt] [--to fmt]");
+  console.log("fconvert route <input> --to <format>");
+  console.log("fconvert formats");
+  console.log("fconvert handlers");
+  console.log("fconvert doctor");
 }
 
 async function main(): Promise<void> {
