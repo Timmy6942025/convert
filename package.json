@@ -1,27 +1,35 @@
 {
   "name": "fconvert",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Fast local CLI conversion tool with graph-based anything-to-anything routing",
   "type": "module",
-  "main": "src/cli/main.ts",
+  "main": "dist/main.js",
   "scripts": {
     "start": "bun run src/cli/main.ts",
     "convert": "bun run src/cli/main.ts",
     "test": "bun test",
-    "typecheck": "bunx tsc --noEmit",
-    "build:cli": "bun build src/cli/main.ts --compile --outfile dist/convert",
-    "build:picker": "go build -C tools/format-picker -o ../../dist/fconvert-picker .",
-    "build": "bun run build:cli && bun run build:picker"
+    "typecheck": "tsc --noEmit",
+    "build:cli": "bun build src/cli/main.ts --target=node --outfile dist/main.js",
+    "build": "bun run build:cli",
+    "prepack": "npm run build"
   },
   "bin": {
-    "fconvert": "src/cli/main.ts",
-    "convert": "src/cli/main.ts"
+    "fconvert": "bin/fconvert.js",
+    "convert": "bin/fconvert.js"
+  },
+  "files": [
+    "bin/",
+    "dist/main.js",
+    "assets/",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
   },
   "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
+    "@types/bun": "latest",
+    "@types/node": "^24.5.2",
+    "typescript": "^5.9.3"
   },
   "keywords": [
     "convert",

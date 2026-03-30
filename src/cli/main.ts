@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
 import { runConvertCommand } from "./commands/convert.ts";
 import { runDoctorCommand } from "./commands/doctor.ts";
@@ -17,7 +17,7 @@ function printUsage(): void {
 }
 
 async function main(): Promise<void> {
-  const parsed = parseArgs(Bun.argv.slice(2));
+  const parsed = parseArgs(process.argv.slice(2));
 
   switch (parsed.command) {
     case "convert":

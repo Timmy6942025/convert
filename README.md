@@ -8,12 +8,16 @@ data, archive, code, and font categories.
 ## Quick start
 
 ```bash
+npm install -g fconvert
+fconvert formats
+```
+
+For local source development, use Bun:
+
+```bash
 bun install
 bun run convert formats
 ```
-
-For linked or installed source checkouts, the `fconvert` executable now runs the Bun
-entrypoint directly, so it works on macOS and Linux as long as Bun is installed.
 
 ## Commands
 
@@ -50,12 +54,10 @@ The output file defaults to the input basename with the selected extension.
 bun run build
 ```
 
-Compiled binary is written to `dist/convert`.
-The Bubble Tea picker helper is written to `dist/fconvert-picker`.
+The distributable Node CLI is written to `dist/main.js`.
 
-`dist/convert` is a native executable built for the current host OS and CPU. Build it on
-macOS for macOS, and on Linux for Linux. Do not reuse a Linux-built `dist/convert` on macOS
-or vice versa.
+The published npm package ships prebuilt JavaScript plus `assets/`, so it installs under Node
+without requiring Bun or the Go-based picker helper at runtime.
 
 ## Project structure
 

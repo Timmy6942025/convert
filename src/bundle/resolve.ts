@@ -1,6 +1,6 @@
 import { constants as fsConstants } from "node:fs";
 import { access, readFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { basename, delimiter, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CliError, ExitCode } from "../core/errors.ts";
 import type { BundleManifest, PlatformManifest } from "./manifest.ts";
@@ -10,6 +10,43 @@ function isExecutable(path: string): Promise<boolean> {
   return access(path, fsConstants.X_OK)
     .then(() => true)
     .catch(() => false);
+}
+
+async function whichInPath(name: string): Promise<string | undefined> {
+  if (!name) {
+    return undefined;
+  }
+
+  if (name.includes("/") || name.includes("\\")) {
+    return (await isExecutable(name)) ? name : undefined;
+  }
+
+  const pathEnv = process.env.PATH;
+  if (!pathEnv) {
+    return undefined;
+  }
+
+  const isWindows = process.platform === "win32";
+  const pathExts = isWindows
+    ? (process.env.PATHEXT?.split(";").filter(Boolean) ?? [".EXE", ".CMD", ".BAT", ".COM"])
+    : [""];
+  const hasWindowsExtension = isWindows && /\.[^\\/]+$/.test(name);
+  const candidateNames = hasWindowsExtension ? [name] : pathExts.map((ext) => `${name}${ext}`);
+
+  for (const entry of pathEnv.split(delimiter)) {
+    if (!entry) {
+      continue;
+    }
+
+    for (const candidateName of candidateNames) {
+      const candidate = join(entry, candidateName);
+      if (await isExecutable(candidate)) {
+        return candidate;
+      }
+    }
+  }
+
+  return undefined;
 }
 
 export class BundleResolver {
@@ -29,7 +66,9 @@ export class BundleResolver {
     }
 
     const currentDir = dirname(fileURLToPath(import.meta.url));
-    this.assetsDir = join(currentDir, "../../assets");
+    const parentDir = dirname(currentDir);
+    const isSourceTree = basename(currentDir) === "bundle" && basename(parentDir) === "src";
+    this.assetsDir = isSourceTree ? join(currentDir, "../../assets") : join(currentDir, "../assets");
   }
 
   private async manifest(): Promise<BundleManifest | undefined> {
@@ -66,7 +105,7 @@ export class BundleResolver {
     }
 
     if (allowSystem) {
-      const fromSystem = Bun.which(name);
+      const fromSystem = await whichInPath(name);
       if (fromSystem) {
         return fromSystem;
       }

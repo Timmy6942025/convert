@@ -1,4 +1,5 @@
 import { CliError, ExitCode } from "../core/errors.ts";
+import { spawn } from "node:child_process";
 
 export interface ExecResult {
   stdout: string;
@@ -11,10 +12,15 @@ export async function runCommand(
   args: string[],
   timeoutMs?: number,
 ): Promise<ExecResult> {
-  const proc = Bun.spawn([command, ...args], {
-    stdout: "pipe",
-    stderr: "pipe",
+  const proc = spawn(command, args, {
+    stdio: ["ignore", "pipe", "pipe"],
   });
+
+  let stdoutBuffers: Buffer[] = [];
+  let stderrBuffers: Buffer[] = [];
+
+  proc.stdout?.on("data", (chunk: Buffer) => stdoutBuffers.push(chunk));
+  proc.stderr?.on("data", (chunk: Buffer) => stderrBuffers.push(chunk));
 
   let timedOut = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -25,11 +31,10 @@ export async function runCommand(
     }, timeoutMs);
   }
 
-  const [stdoutBuf, stderrBuf, exitCode] = await Promise.all([
-    new Response(proc.stdout).arrayBuffer(),
-    new Response(proc.stderr).arrayBuffer(),
-    proc.exited,
-  ]);
+  const exitCode: number = await new Promise((resolve, reject) => {
+    proc.on("error", reject);
+    proc.on("exit", (code) => resolve(code ?? 0));
+  });
 
   if (timer) {
     clearTimeout(timer);
@@ -40,8 +45,8 @@ export async function runCommand(
   }
 
   return {
-    stdout: Buffer.from(stdoutBuf).toString("utf8"),
-    stderr: Buffer.from(stderrBuf).toString("utf8"),
+    stdout: Buffer.concat(stdoutBuffers).toString("utf8"),
+    stderr: Buffer.concat(stderrBuffers).toString("utf8"),
     exitCode,
   };
 }
