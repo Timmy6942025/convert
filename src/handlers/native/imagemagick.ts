@@ -5,7 +5,31 @@ import { runCommand } from "../exec.ts";
 import { CliError, ExitCode } from "../../core/errors.ts";
 import { toFileArtifact } from "../../artifacts/file.ts";
 
-const IMAGE_DOC = ["png", "jpeg", "webp", "bmp", "tiff", "gif", "svg", "pdf"];
+const IMAGE_DOC = [
+  "png",
+  "jpeg",
+  "webp",
+  "bmp",
+  "tiff",
+  "gif",
+  "svg",
+  "avif",
+  "heic",
+  "ico",
+  "jp2",
+  "psd",
+  "tga",
+  "dds",
+  "hdr",
+  "exr",
+  "pnm",
+  "pbm",
+  "pgm",
+  "ppm",
+  "pdf",
+  "eps",
+  "ps",
+];
 
 function imageRules(): HandlerRule[] {
   const rules: HandlerRule[] = [];

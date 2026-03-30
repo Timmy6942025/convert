@@ -3,7 +3,29 @@ import { dirname } from "node:path";
 import type { ConversionHandler, ConvertRequest, HandlerContext, HandlerResult, HandlerRule } from "../base.ts";
 import { toFileArtifact } from "../../artifacts/file.ts";
 
-const TEXTISH = ["txt", "md", "html", "json", "xml", "yaml", "csv", "base64", "hex", "bin"];
+const TEXTISH = [
+  "txt",
+  "md",
+  "html",
+  "xhtml",
+  "json",
+  "xml",
+  "yaml",
+  "toml",
+  "ini",
+  "csv",
+  "tsv",
+  "rst",
+  "adoc",
+  "bbcode",
+  "org",
+  "tex",
+  "docbook",
+  "jats",
+  "base64",
+  "hex",
+  "bin",
+];
 
 function textRules(): HandlerRule[] {
   const rules: HandlerRule[] = [];
@@ -66,7 +88,7 @@ function fromStructuredToText(inputFormat: string, text: string): string {
     }
   }
 
-  if (inputFormat === "html" || inputFormat === "xml") {
+  if (inputFormat === "html" || inputFormat === "xhtml" || inputFormat === "xml") {
     return text.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
   }
 

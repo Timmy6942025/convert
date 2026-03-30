@@ -3,6 +3,7 @@ import { FormatRegistry } from "../../src/formats/registry.ts";
 import { ConversionGraph } from "../../src/planner/graph.ts";
 import { findRoutes } from "../../src/planner/search.ts";
 import type { ConversionHandler, ConvertRequest, HandlerContext, HandlerResult } from "../../src/handlers/base.ts";
+import type { FormatDefinition } from "../../src/core/types.ts";
 
 class MockHandler implements ConversionHandler {
   readonly name: string;
@@ -25,7 +26,37 @@ class MockHandler implements ConversionHandler {
 }
 
 test("planner prefers meaningful route over wildcard", () => {
-  const registry = new FormatRegistry();
+  const smallSet: FormatDefinition[] = [
+    {
+      id: "png",
+      name: "Portable Network Graphics",
+      extension: "png",
+      extensions: ["png"],
+      mime: ["image/png"],
+      category: ["image"],
+      aliases: [],
+    },
+    {
+      id: "wav",
+      name: "Waveform Audio",
+      extension: "wav",
+      extensions: ["wav"],
+      mime: ["audio/wav"],
+      category: ["audio"],
+      aliases: [],
+    },
+    {
+      id: "mp3",
+      name: "MP3 Audio",
+      extension: "mp3",
+      extensions: ["mp3"],
+      mime: ["audio/mpeg"],
+      category: ["audio"],
+      aliases: [],
+    },
+  ];
+
+  const registry = new FormatRegistry(smallSet);
 
   const handlers: ConversionHandler[] = [
     new MockHandler("image-audio-bridge", [{ from: "png", to: "wav", cost: 10 }]),

@@ -5,9 +5,43 @@ import { runCommand } from "../exec.ts";
 import { CliError, ExitCode } from "../../core/errors.ts";
 import { toFileArtifact } from "../../artifacts/file.ts";
 
-const AUDIO = ["wav", "mp3", "flac", "ogg"];
-const VIDEO = ["mp4", "mov", "webm", "wmv", "gif"];
-const IMAGE = ["png", "jpeg", "webp", "bmp", "tiff", "gif"];
+const AUDIO = [
+  "wav",
+  "mp3",
+  "flac",
+  "ogg",
+  "aac",
+  "m4a",
+  "wma",
+  "aiff",
+  "opus",
+  "amr",
+  "ac3",
+  "dts",
+  "mka",
+  "mid",
+];
+
+const VIDEO = [
+  "mp4",
+  "m4v",
+  "mov",
+  "webm",
+  "wmv",
+  "mkv",
+  "avi",
+  "mpeg",
+  "3gp",
+  "3g2",
+  "flv",
+  "ts",
+  "vob",
+  "ogv",
+  "asf",
+  "gif",
+];
+
+const IMAGE = ["png", "jpeg", "webp", "bmp", "tiff", "gif", "avif", "jp2", "apng"];
 
 function pairRules(from: string[], to: string[], cost: number): HandlerRule[] {
   const rules: HandlerRule[] = [];

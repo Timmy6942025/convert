@@ -2,6 +2,9 @@
 
 Fast local CLI conversion tool with graph-based anything-to-anything routing.
 
+The built-in registry includes 100+ file formats across image, audio, video, document,
+data, archive, code, and font categories.
+
 ## Quick start
 
 ```bash

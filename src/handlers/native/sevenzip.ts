@@ -5,7 +5,9 @@ import { runCommand } from "../exec.ts";
 import { CliError, ExitCode } from "../../core/errors.ts";
 import { toFileArtifact } from "../../artifacts/file.ts";
 
-const ARCHIVES = new Set(["zip", "tar", "7z"]);
+const ARCHIVES = new Set(["zip", "tar", "7z", "gz", "bz2", "xz", "rar", "cab", "iso"]);
+const WRITE_ARCHIVES = ["zip", "tar", "7z", "gz", "bz2", "xz", "rar", "cab", "iso"];
+const READ_ARCHIVES = ["zip", "tar", "7z", "gz", "bz2", "xz", "rar", "cab", "iso"];
 
 async function findFirstFile(root: string): Promise<string | undefined> {
   const entries = await readdir(root, { withFileTypes: true });
@@ -25,14 +27,14 @@ async function findFirstFile(root: string): Promise<string | undefined> {
 }
 
 function sevenZipRules(): HandlerRule[] {
-  return [
-    { from: "*", to: "zip", cost: 90, lossless: false },
-    { from: "*", to: "tar", cost: 90, lossless: false },
-    { from: "*", to: "7z", cost: 95, lossless: false },
-    { from: "zip", to: "*", cost: 140, lossless: false },
-    { from: "tar", to: "*", cost: 140, lossless: false },
-    { from: "7z", to: "*", cost: 145, lossless: false },
-  ];
+  const rules: HandlerRule[] = [];
+  for (const archive of WRITE_ARCHIVES) {
+    rules.push({ from: "*", to: archive, cost: 95, lossless: false });
+  }
+  for (const archive of READ_ARCHIVES) {
+    rules.push({ from: archive, to: "*", cost: 145, lossless: false });
+  }
+  return rules;
 }
 
 export class SevenZipHandler implements ConversionHandler {
