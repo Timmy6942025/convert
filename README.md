@@ -1,4 +1,4 @@
-# convert
+# fconvert
 
 Fast local CLI conversion tool with graph-based anything-to-anything routing.
 

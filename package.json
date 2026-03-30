@@ -1,5 +1,5 @@
 {
-  "name": "local-convert",
+  "name": "fconvert",
   "version": "0.1.0",
   "description": "Fast local CLI conversion tool with graph-based anything-to-anything routing",
   "type": "module",
