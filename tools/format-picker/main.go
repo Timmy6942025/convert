@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type option struct {
@@ -41,6 +42,33 @@ type model struct {
 	width     int
 	height    int
 }
+
+var (
+	frameStyle = lipgloss.NewStyle().
+			Padding(0, 1)
+
+	headerStyle = lipgloss.NewStyle().
+			Bold(true)
+
+	promptStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.AdaptiveColor{Light: "241", Dark: "248"})
+
+	hintStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.AdaptiveColor{Light: "245", Dark: "240"})
+
+	selectedStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.AdaptiveColor{Light: "39", Dark: "117"})
+
+	rowStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.AdaptiveColor{Light: "250", Dark: "252"})
+
+	footerStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.AdaptiveColor{Light: "245", Dark: "240"})
+
+	emptyStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.AdaptiveColor{Light: "203", Dark: "210"})
+)
 
 func (m model) Init() tea.Cmd {
 	return nil
@@ -94,15 +122,19 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() string {
 	var builder strings.Builder
-	builder.WriteString(fmt.Sprintf("%s > %s\n", m.prompt, m.query))
+	line := fmt.Sprintf("%s > %s", promptStyle.Render(m.prompt), m.query)
+	builder.WriteString(headerStyle.Render(line))
+	builder.WriteString("\n")
 	if m.query == "" && m.preferred != "" {
-		builder.WriteString(fmt.Sprintf("  hint: original extension '.%s' is ranked first\n", m.preferred))
+		builder.WriteString(hintStyle.Render(fmt.Sprintf("hint: original extension '.%s' is ranked first", m.preferred)))
+		builder.WriteString("\n")
 	}
 
 	if len(m.filtered) == 0 {
-		builder.WriteString("  no matches\n")
-		builder.WriteString("  enter to keep typing, esc to cancel")
-		return builder.String()
+		builder.WriteString(emptyStyle.Render("no matches"))
+		builder.WriteString("\n")
+		builder.WriteString(footerStyle.Render("keys: type to search, backspace delete, esc cancel"))
+		return frameStyle.Render(builder.String())
 	}
 
 	maxRows := 8
@@ -128,15 +160,26 @@ func (m model) View() string {
 
 	for index := start; index < end; index++ {
 		prefix := "  "
+		style := rowStyle
 		if index == m.cursor {
 			prefix = "> "
+			style = selectedStyle
 		}
 		item := m.filtered[index]
-		builder.WriteString(fmt.Sprintf("%s%-10s .%-6s %s\n", prefix, item.ID, item.Extension, item.Name))
+		line := fmt.Sprintf("%s%-10s .%-6s %s", prefix, item.ID, item.Extension, item.Name)
+		builder.WriteString(style.Render(line))
+		builder.WriteString("\n")
 	}
 
-	builder.WriteString("  enter select  esc cancel")
-	return builder.String()
+	status := fmt.Sprintf("%d shown / %d total", len(m.filtered), len(m.all))
+	if len(m.filtered) != len(m.all) {
+		status = fmt.Sprintf("%d matches / %d total", len(m.filtered), len(m.all))
+	}
+	builder.WriteString(footerStyle.Render(status))
+	builder.WriteString("\n")
+	builder.WriteString(footerStyle.Render("keys: up/down move, enter select, esc cancel"))
+
+	return frameStyle.Render(builder.String())
 }
 
 func (m *model) refilter() {
@@ -249,6 +292,10 @@ func readPayload(path string) (payload, error) {
 	if data.Prompt == "" {
 		data.Prompt = "output format"
 	}
+	if data.Query != "" {
+		data.Query = strings.TrimSpace(data.Query)
+	}
+	data.Prompt = strings.TrimSpace(data.Prompt)
 	return data, nil
 }
 

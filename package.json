@@ -1,6 +1,6 @@
 {
   "name": "fconvert",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Fast local CLI conversion tool with graph-based anything-to-anything routing",
   "type": "module",
   "main": "src/cli/main.ts",
