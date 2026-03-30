@@ -12,6 +12,9 @@ bun install
 bun run convert formats
 ```
 
+For linked or installed source checkouts, the `fconvert` executable now runs the Bun
+entrypoint directly, so it works on macOS and Linux as long as Bun is installed.
+
 ## Commands
 
 ```bash
@@ -49,6 +52,10 @@ bun run build
 
 Compiled binary is written to `dist/convert`.
 The Bubble Tea picker helper is written to `dist/fconvert-picker`.
+
+`dist/convert` is a native executable built for the current host OS and CPU. Build it on
+macOS for macOS, and on Linux for Linux. Do not reuse a Linux-built `dist/convert` on macOS
+or vice versa.
 
 ## Project structure
 

@@ -14,8 +14,8 @@
     "build": "bun run build:cli && bun run build:picker"
   },
   "bin": {
-    "fconvert": "dist/convert",
-    "convert": "dist/convert"
+    "fconvert": "src/cli/main.ts",
+    "convert": "src/cli/main.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"
