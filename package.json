@@ -1,8 +1,9 @@
 {
-  "name": "convert",
-  "module": "src/cli/main.ts",
+  "name": "local-convert",
+  "version": "0.1.0",
+  "description": "Fast local CLI conversion tool with graph-based anything-to-anything routing",
   "type": "module",
-  "private": true,
+  "main": "src/cli/main.ts",
   "scripts": {
     "start": "bun run src/cli/main.ts",
     "convert": "bun run src/cli/main.ts",
@@ -18,5 +19,7 @@
   },
   "peerDependencies": {
     "typescript": "^5"
-  }
+  },
+  "keywords": ["convert", "converter", "ffmpeg", "pandoc", "cli"],
+  "license": "MIT"
 }
