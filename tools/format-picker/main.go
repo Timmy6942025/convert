@@ -8,6 +8,9 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -30,9 +33,54 @@ type scoredOption struct {
 	score  int
 }
 
+type keyMap struct {
+	Up       key.Binding
+	Down     key.Binding
+	PageUp   key.Binding
+	PageDown key.Binding
+	Accept   key.Binding
+	Quit     key.Binding
+}
+
+func (k keyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Up, k.Down, k.Accept, k.Quit}
+}
+
+func (k keyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{{k.Up, k.Down, k.PageUp, k.PageDown}, {k.Accept, k.Quit}}
+}
+
+func defaultKeys() keyMap {
+	return keyMap{
+		Up: key.NewBinding(
+			key.WithKeys("up", "k", "ctrl+p"),
+			key.WithHelp("up", "move up"),
+		),
+		Down: key.NewBinding(
+			key.WithKeys("down", "j", "ctrl+n"),
+			key.WithHelp("down", "move down"),
+		),
+		PageUp: key.NewBinding(
+			key.WithKeys("pgup", "u"),
+			key.WithHelp("pgup", "page up"),
+		),
+		PageDown: key.NewBinding(
+			key.WithKeys("pgdown", "d"),
+			key.WithHelp("pgdown", "page down"),
+		),
+		Accept: key.NewBinding(
+			key.WithKeys("enter"),
+			key.WithHelp("enter", "select"),
+		),
+		Quit: key.NewBinding(
+			key.WithKeys("esc", "ctrl+c"),
+			key.WithHelp("esc", "cancel"),
+		),
+	}
+}
+
 type model struct {
 	prompt    string
-	query     string
 	preferred string
 	all       []option
 	filtered  []option
@@ -41,17 +89,25 @@ type model struct {
 	cancelled bool
 	width     int
 	height    int
+	input     textinput.Model
+	help      help.Model
+	keys      keyMap
 }
 
 var (
-	frameStyle = lipgloss.NewStyle().
+	appStyle = lipgloss.NewStyle().
+			BorderStyle(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.AdaptiveColor{Light: "251", Dark: "238"}).
 			Padding(0, 1)
 
-	headerStyle = lipgloss.NewStyle().
+	titleStyle = lipgloss.NewStyle().
 			Bold(true)
 
+	mutedStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.AdaptiveColor{Light: "245", Dark: "240"})
+
 	promptStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.AdaptiveColor{Light: "241", Dark: "248"})
+			Foreground(lipgloss.AdaptiveColor{Light: "63", Dark: "111"})
 
 	hintStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.AdaptiveColor{Light: "245", Dark: "240"})
@@ -71,7 +127,7 @@ var (
 )
 
 func (m model) Init() tea.Cmd {
-	return nil
+	return textinput.Blink
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -79,53 +135,64 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		if m.width > 0 {
+			m.input.Width = maxInt(12, m.width-24)
+		}
 		return m, nil
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "esc":
+		switch {
+		case key.Matches(msg, m.keys.Quit):
 			m.cancelled = true
 			return m, tea.Quit
-		case "enter":
+		case key.Matches(msg, m.keys.Accept):
 			if len(m.filtered) == 0 {
 				return m, nil
 			}
 			selected := m.filtered[m.cursor]
 			m.selected = &selected
 			return m, tea.Quit
-		case "up", "k", "ctrl+p":
+		case key.Matches(msg, m.keys.Up):
 			if m.cursor > 0 {
 				m.cursor--
 			}
 			return m, nil
-		case "down", "j", "ctrl+n":
+		case key.Matches(msg, m.keys.Down):
 			if m.cursor < len(m.filtered)-1 {
 				m.cursor++
 			}
 			return m, nil
-		case "backspace", "ctrl+h":
-			if len(m.query) == 0 {
-				return m, nil
-			}
-			m.query = m.query[:len(m.query)-1]
-			m.refilter()
+		case key.Matches(msg, m.keys.PageUp):
+			step := m.visibleRows()
+			m.cursor = maxInt(0, m.cursor-step)
 			return m, nil
-		}
-
-		if msg.Type == tea.KeyRunes {
-			m.query += msg.String()
-			m.refilter()
+		case key.Matches(msg, m.keys.PageDown):
+			step := m.visibleRows()
+			if len(m.filtered) > 0 {
+				m.cursor = minInt(len(m.filtered)-1, m.cursor+step)
+			}
+			return m, nil
 		}
 	}
 
-	return m, nil
+	previousQuery := m.input.Value()
+	var cmd tea.Cmd
+	m.input, cmd = m.input.Update(msg)
+	if previousQuery != m.input.Value() {
+		m.refilter()
+	}
+
+	return m, cmd
 }
 
 func (m model) View() string {
 	var builder strings.Builder
-	line := fmt.Sprintf("%s > %s", promptStyle.Render(m.prompt), m.query)
-	builder.WriteString(headerStyle.Render(line))
+	builder.WriteString(titleStyle.Render("fconvert format picker"))
 	builder.WriteString("\n")
-	if m.query == "" && m.preferred != "" {
+	builder.WriteString(promptStyle.Render(m.prompt))
+	builder.WriteString("\n")
+	builder.WriteString(m.input.View())
+	builder.WriteString("\n")
+	if strings.TrimSpace(m.input.Value()) == "" && m.preferred != "" {
 		builder.WriteString(hintStyle.Render(fmt.Sprintf("hint: original extension '.%s' is ranked first", m.preferred)))
 		builder.WriteString("\n")
 	}
@@ -133,17 +200,11 @@ func (m model) View() string {
 	if len(m.filtered) == 0 {
 		builder.WriteString(emptyStyle.Render("no matches"))
 		builder.WriteString("\n")
-		builder.WriteString(footerStyle.Render("keys: type to search, backspace delete, esc cancel"))
-		return frameStyle.Render(builder.String())
+		builder.WriteString(footerStyle.Render(m.help.View(m.keys)))
+		return appStyle.Render(builder.String())
 	}
 
-	maxRows := 8
-	if m.height > 6 {
-		maxRows = m.height - 4
-	}
-	if maxRows < 4 {
-		maxRows = 4
-	}
+	maxRows := m.visibleRows()
 	if maxRows > len(m.filtered) {
 		maxRows = len(m.filtered)
 	}
@@ -162,11 +223,15 @@ func (m model) View() string {
 		prefix := "  "
 		style := rowStyle
 		if index == m.cursor {
-			prefix = "> "
+			prefix = "->"
 			style = selectedStyle
 		}
 		item := m.filtered[index]
-		line := fmt.Sprintf("%s%-10s .%-6s %s", prefix, item.ID, item.Extension, item.Name)
+		extra := ""
+		if strings.EqualFold(item.Extension, m.preferred) {
+			extra = mutedStyle.Render(" same-ext")
+		}
+		line := fmt.Sprintf("%s %-10s .%-6s %s%s", prefix, item.ID, item.Extension, item.Name, extra)
 		builder.WriteString(style.Render(line))
 		builder.WriteString("\n")
 	}
@@ -177,13 +242,24 @@ func (m model) View() string {
 	}
 	builder.WriteString(footerStyle.Render(status))
 	builder.WriteString("\n")
-	builder.WriteString(footerStyle.Render("keys: up/down move, enter select, esc cancel"))
+	builder.WriteString(footerStyle.Render(m.help.View(m.keys)))
 
-	return frameStyle.Render(builder.String())
+	return appStyle.Render(builder.String())
+}
+
+func (m model) visibleRows() int {
+	rows := 10
+	if m.height > 0 {
+		rows = m.height - 11
+	}
+	if rows < 4 {
+		rows = 4
+	}
+	return rows
 }
 
 func (m *model) refilter() {
-	query := strings.ToLower(strings.TrimSpace(m.query))
+	query := strings.ToLower(strings.TrimSpace(m.input.Value()))
 	scored := make([]scoredOption, 0, len(m.all))
 
 	for _, item := range m.all {
@@ -278,6 +354,20 @@ func fuzzyScore(query string, item option, preferred string) int {
 	return score
 }
 
+func minInt(a int, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func maxInt(a int, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
 func readPayload(path string) (payload, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
@@ -317,9 +407,25 @@ func main() {
 
 	picker := model{
 		prompt:    data.Prompt,
-		query:     data.Query,
 		preferred: strings.TrimSpace(data.Preferred),
 		all:       data.Options,
+		keys:      defaultKeys(),
+		help:      help.New(),
+	}
+	picker.input = textinput.New()
+	picker.input.Prompt = ""
+	picker.input.Placeholder = "type to fuzzy filter"
+	picker.input.CharLimit = 128
+	picker.input.SetValue(data.Query)
+	picker.input.Focus()
+	picker.help.ShowAll = false
+	picker.help.Styles.ShortKey = mutedStyle
+	picker.help.Styles.ShortDesc = mutedStyle
+	picker.help.Styles.FullKey = mutedStyle
+	picker.help.Styles.FullDesc = mutedStyle
+
+	if picker.prompt == "" {
+		picker.prompt = "output format"
 	}
 	picker.refilter()
 
