@@ -53,19 +53,19 @@ func (k keyMap) FullHelp() [][]key.Binding {
 func defaultKeys() keyMap {
 	return keyMap{
 		Up: key.NewBinding(
-			key.WithKeys("up", "k", "ctrl+p"),
+			key.WithKeys("up"),
 			key.WithHelp("up", "move up"),
 		),
 		Down: key.NewBinding(
-			key.WithKeys("down", "j", "ctrl+n"),
+			key.WithKeys("down"),
 			key.WithHelp("down", "move down"),
 		),
 		PageUp: key.NewBinding(
-			key.WithKeys("pgup", "u"),
+			key.WithKeys("pgup"),
 			key.WithHelp("pgup", "page up"),
 		),
 		PageDown: key.NewBinding(
-			key.WithKeys("pgdown", "d"),
+			key.WithKeys("pgdown"),
 			key.WithHelp("pgdown", "page down"),
 		),
 		Accept: key.NewBinding(

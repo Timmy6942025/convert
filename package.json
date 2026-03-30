@@ -1,6 +1,6 @@
 {
   "name": "fconvert",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Fast local CLI conversion tool with graph-based anything-to-anything routing",
   "type": "module",
   "main": "dist/main.js",
@@ -10,7 +10,8 @@
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "build:cli": "bun build src/cli/main.ts --target=node --outfile dist/main.js",
-    "build": "bun run build:cli",
+    "build:picker": "go build -C tools/format-picker -o ../../dist/fconvert-picker .",
+    "build": "bun run build:cli && bun run build:picker",
     "prepack": "npm run build"
   },
   "bin": {
@@ -20,6 +21,7 @@
   "files": [
     "bin/",
     "dist/main.js",
+    "dist/fconvert-picker",
     "assets/",
     "README.md"
   ],
