@@ -9,6 +9,7 @@ import { FormatRegistry } from "../formats/registry.ts";
 interface PickerPayload {
   prompt: string;
   query: string;
+  preferred: string;
   options: Array<{
     id: string;
     name: string;
@@ -110,7 +111,8 @@ export async function pickOutputFormatInteractive(
 
   const payload: PickerPayload = {
     prompt: "output format",
-    query: extname(inputPath).replace(/^\./, ""),
+    query: "",
+    preferred: extname(inputPath).replace(/^\./, ""),
     options: registry.all().map((format) => ({
       id: format.id,
       name: format.name,

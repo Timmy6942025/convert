@@ -18,9 +18,10 @@ type option struct {
 }
 
 type payload struct {
-	Prompt  string   `json:"prompt"`
-	Query   string   `json:"query"`
-	Options []option `json:"options"`
+	Prompt    string   `json:"prompt"`
+	Query     string   `json:"query"`
+	Preferred string   `json:"preferred"`
+	Options   []option `json:"options"`
 }
 
 type scoredOption struct {
@@ -31,6 +32,7 @@ type scoredOption struct {
 type model struct {
 	prompt    string
 	query     string
+	preferred string
 	all       []option
 	filtered  []option
 	cursor    int
@@ -93,6 +95,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() string {
 	var builder strings.Builder
 	builder.WriteString(fmt.Sprintf("%s > %s\n", m.prompt, m.query))
+	if m.query == "" && m.preferred != "" {
+		builder.WriteString(fmt.Sprintf("  hint: original extension '.%s' is ranked first\n", m.preferred))
+	}
 
 	if len(m.filtered) == 0 {
 		builder.WriteString("  no matches\n")
@@ -139,7 +144,7 @@ func (m *model) refilter() {
 	scored := make([]scoredOption, 0, len(m.all))
 
 	for _, item := range m.all {
-		score := fuzzyScore(query, item)
+		score := fuzzyScore(query, item, m.preferred)
 		if score < 0 {
 			continue
 		}
@@ -166,9 +171,19 @@ func (m *model) refilter() {
 	}
 }
 
-func fuzzyScore(query string, item option) int {
+func fuzzyScore(query string, item option, preferred string) int {
 	if query == "" {
-		return 1
+		score := 1
+		if preferred != "" {
+			normalizedPreferred := strings.ToLower(preferred)
+			if strings.EqualFold(item.Extension, normalizedPreferred) {
+				score += 25
+			}
+			if strings.EqualFold(item.ID, normalizedPreferred) {
+				score += 20
+			}
+		}
+		return score
 	}
 
 	candidate := strings.ToLower(item.ID + " " + item.Extension + " " + item.Name)
@@ -207,6 +222,16 @@ func fuzzyScore(query string, item option) int {
 	if strings.HasPrefix(strings.ToLower(item.ID), query) {
 		score += 15
 	}
+	if preferred != "" {
+		normalizedPreferred := strings.ToLower(preferred)
+		if strings.EqualFold(item.Extension, normalizedPreferred) {
+			score += 8
+		}
+		if strings.EqualFold(item.ID, normalizedPreferred) {
+			score += 6
+		}
+	}
+
 	return score
 }
 
@@ -244,9 +269,10 @@ func main() {
 	}
 
 	picker := model{
-		prompt: data.Prompt,
-		query:  data.Query,
-		all:    data.Options,
+		prompt:    data.Prompt,
+		query:     data.Query,
+		preferred: strings.TrimSpace(data.Preferred),
+		all:       data.Options,
 	}
 	picker.refilter()
 
